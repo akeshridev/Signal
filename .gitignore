@@ -1,0 +1,21 @@
+# Secrets / local config
+.env
+local.properties
+
+# Node
+node_modules/
+
+# Android / Gradle
+.gradle/
+.kotlin/
+*/build/
+*/*/build/
+captures/
+.cxx/
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store

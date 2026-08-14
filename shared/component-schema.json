@@ -1,0 +1,91 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://signal.internal/schemas/component-schema.json",
+  "title": "Signal Component Schema",
+  "description": "Single source of truth for the component-tree contract shared between bff/ and mobile/. Both sides must stay in sync with this file: bff/ renders responses that validate against it, mobile/ renders any component whose 'type' appears in componentTypes without knowing what the type means.",
+
+  "definitions": {
+    "component": {
+      "type": "object",
+      "description": "A generic node in a component tree. type selects the definition below that data must satisfy.",
+      "required": ["type", "data"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["token_card", "bottom_sheet"]
+        },
+        "data": {
+          "type": "object"
+        }
+      }
+    },
+
+    "action_button": {
+      "type": "object",
+      "description": "A button that, when tapped, triggers a named backend action (POST /action/{action}) with the given params.",
+      "required": ["label", "action"],
+      "properties": {
+        "label": { "type": "string" },
+        "action": { "type": "string", "description": "Action name, e.g. 'explain'. Client posts to /action/{action}." },
+        "params": { "type": "object", "description": "Optional extra params merged into the action request body." }
+      }
+    },
+
+    "token_card": {
+      "type": "object",
+      "description": "Displays a single token's price and an AI-generated insight, with a button to request more explanation.",
+      "required": ["name", "symbol", "price_display", "insight", "change_24h", "icon_url", "rank", "ai_action_button"],
+      "properties": {
+        "name": { "type": "string", "description": "Full token name, e.g. 'Solana'." },
+        "symbol": { "type": "string", "description": "Ticker symbol, e.g. 'SOL'." },
+        "price_display": { "type": "string", "description": "Pre-formatted price string, e.g. '$142.31'." },
+        "insight": { "type": "string", "description": "Short AI-generated or static insight line." },
+        "change_24h": { "type": ["number", "null"], "description": "Raw 24h % change, null when unavailable." },
+        "icon_url": { "type": ["string", "null"], "description": "Hosted logo URL; null falls back to a monogram avatar." },
+        "rank": { "type": ["number", "null"], "description": "Market cap rank (1 = largest), null when unavailable." },
+        "ai_action_button": { "$ref": "#/definitions/action_button" }
+      }
+    },
+
+    "bottom_sheet": {
+      "type": "object",
+      "description": "A modal sheet shown in response to an action, e.g. an AI explanation.",
+      "required": ["title", "body", "close_label", "token", "icon_url", "ai_generated"],
+      "properties": {
+        "title": { "type": "string" },
+        "body": { "type": "string", "description": "Main sheet content. May be multi-paragraph plain text." },
+        "close_label": { "type": "string", "description": "Label for the dismiss button, e.g. 'Close' or 'Got it'." },
+        "token": { "type": "string", "description": "Raw token name the sheet is about, e.g. 'Bitcoin' — distinct from the composed title." },
+        "icon_url": { "type": ["string", "null"], "description": "Echoed from the triggering token_card; null falls back to a monogram." },
+        "ai_generated": { "type": "boolean", "description": "True when body came from the LLM (explain); false for fixed-copy actions (compare)." }
+      }
+    }
+  },
+
+  "componentTypes": {
+    "token_card": { "$ref": "#/definitions/token_card" },
+    "bottom_sheet": { "$ref": "#/definitions/bottom_sheet" }
+  },
+
+  "screenResponse": {
+    "type": "object",
+    "description": "Response shape for GET /screen/{screenId}.",
+    "required": ["screen_id", "components"],
+    "properties": {
+      "screen_id": { "type": "string" },
+      "components": {
+        "type": "array",
+        "items": { "$ref": "#/definitions/component" }
+      }
+    }
+  },
+
+  "actionResponse": {
+    "type": "object",
+    "description": "Response shape for POST /action/{action}.",
+    "required": ["component"],
+    "properties": {
+      "component": { "$ref": "#/definitions/component" }
+    }
+  }
+}
